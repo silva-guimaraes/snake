@@ -11,7 +11,7 @@ def main(stdsrc):
     stdsrc.scrollok(0)
     curses.curs_set(0)
 
-    SNAKE = '▆'
+    SNAKE = '◼'
     BLANK = '.'
     RAT = '🐀'
 
@@ -23,7 +23,11 @@ def main(stdsrc):
     arena_width = arena_width//2 - 1
     arena_height = arena_height-2
 
-    def inside_arena(y, x):
+    Y, X, HEAD = 0, 1, 0
+
+    def inside_arena(head):
+        y = head[Y]
+        x = head[X]
         return y >= 0 and y < arena_height and x >= 0 and x < arena_width
 
     def clean_arena():
@@ -31,8 +35,18 @@ def main(stdsrc):
                 for i in range(arena_height)]
 
     startY, startX = arena_height//2+1, 1
-    snake = [[startY, startX], [startY-1, startX], [startY-2, startX]]
-    Y, X, HEAD = 0, 1, 0
+    snake = [[startY, startX], [startY-1, startX], [startY-2, startX],
+             [startY-3, startX]]
+
+    def move(new_head_pos, snake):
+        return [new_head_pos] + snake[:-1]
+
+    def get_direction(snake):
+        head = snake[HEAD]
+        body_part = snake[HEAD+1]
+        y = head[Y] - body_part[Y]
+        x = head[X] - body_part[X]
+        return y, x
 
     while True:
 
@@ -48,30 +62,46 @@ def main(stdsrc):
                 except (curses.error):
                     pass
         win.border()
+        head = snake[HEAD]
+        win.addstr(0, 2, ' wasd ou hjkl para controlar. ctrl+c para sair.')
+
         c = win.getch()
 
-        head = snake[HEAD]
         if c == ord('w') or c == ord('k'):
-            if inside_arena(head[Y] - 1, head[X]):
-                snake[0][Y] -= 1
+            head = snake[HEAD].copy()
+            head[Y] -= 1
+            if inside_arena(head):
+                snake = move(head, snake)
 
         elif c == ord('a') or c == ord('h'):
-            if inside_arena(head[Y], head[X] - 1):
-                snake[0][X] -= 1
+            head = snake[HEAD].copy()
+            head[X] -= 1
+            if inside_arena(head):
+                snake = move(head, snake)
 
         elif c == ord('s') or c == ord('j'):
-            if inside_arena(head[Y] + 1, head[X]):
-                snake[0][Y] += 1
+            head = snake[HEAD].copy()
+            head[Y] += 1
+            if inside_arena(head):
+                snake = move(head, snake)
 
         elif c == ord('d') or c == ord('l'):
-            if inside_arena(head[Y], head[X] + 1):
-                snake[0][X] += 1
+            head = snake[HEAD].copy()
+            head[X] += 1
+            if inside_arena(head):
+                snake = move(head, snake)
+        elif c == -1:
+            y, x = get_direction(snake)
+            head = snake[HEAD].copy()
+            head[Y] += y
+            head[X] += x
+            if inside_arena(head):
+                snake = move(head, snake)
 
-        win.addstr(0, 0, 'wasd ou hjkl para controlar. ctrl+c para sair.')
-        win.addstr(1, 0, f'arena len: {len(arena)}x{len(arena[0])}')
-        win.addstr(2, 0, f'head: {head[Y]}x{head[X]}')
+        # win.addstr(1, 0, f'arena len: {len(arena)}x{len(arena[0])}')
+        # win.addstr(2, 0, f'head: {head[Y]}x{head[X]}')
         win.refresh()
-        time.sleep(.01)
+        time.sleep(.1)
 
 
 try:
