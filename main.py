@@ -1,6 +1,17 @@
 import random
 import sys
 import curses
+import time
+
+
+class Win(Exception):
+    def __init__(self):
+        super(Win, self).__init__('vitória!')
+
+
+class Loss(Exception):
+    def __init__(self, pts):
+        super(Loss, self).__init__("game over ┐(´ー｀)┌. Pontos: " + str(pts))
 
 
 # "Cyclomatic complexity too high"
@@ -53,10 +64,14 @@ def main(stdsrc):
         return [new_head_pos] + snake[:-1]
 
     def random_rat():
+
         # todas as posições validas menos as posições onde a cobra esta
         valid_positions = [i for i in VALID_POSITIONS if i not in snake]
+
+        # não havendo posições validas significa que o jogador venceu
         if len(valid_positions) == 0:
-            raise Exception("vitória!")
+            raise Win()
+
         return valid_positions[random.randint(0, len(valid_positions)-1)]
 
     # nosso ratinho
@@ -122,7 +137,7 @@ def main(stdsrc):
         self_collision = any(head == body_part for body_part in snake[2:])
 
         if not inside_arena or self_collision:
-            raise Exception("game over ┐(´ー｀)┌. Pontos: " + str(len(snake)-4))
+            raise Loss(len(snake)-4)
 
         if not_backwards:
             snake = move(head, snake)
@@ -138,4 +153,10 @@ def main(stdsrc):
 try:
     curses.wrapper(main)
 except KeyboardInterrupt:
+    sys.exit(0)
+except Loss as e:
+    print(e)
+    sys.exit(0)
+except Win as e:
+    print(e)
     sys.exit(0)
