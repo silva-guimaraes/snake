@@ -17,6 +17,7 @@ def main(stdsrc):
     BLANK = '.'
     RAT = '🐀'
 
+    start = False
     screen_height, screen_width = stdsrc.getmaxyx()
     win = curses.newwin(screen_height, screen_width, 0, 0)
     # win.nodelay(True)
@@ -27,6 +28,13 @@ def main(stdsrc):
 
     Y, X, HEAD = 0, 1, 0
 
+    startY, startX = arena_height//2+1, arena_width//2
+    snake = [[startY, startX], [startY-1, startX], [startY-2, startX],
+             [startY-3, startX]]
+    VALID_POSITIONS = [[y, x] for x in range(arena_width)
+                       for y in range(arena_height)]
+    # next_body_part = 0.0 # 1.0 == body part novo
+
     def clear_arena():
         return [[BLANK for j in range(arena_width)]
                 for i in range(arena_height)]
@@ -35,13 +43,11 @@ def main(stdsrc):
         return [new_head_pos] + snake[:-1]
 
     def random_rat():
-        return [random.randint(0, arena_height-1),
-                random.randint(0, arena_width-1)]
+        valid_positions = [i for i in VALID_POSITIONS if i not in snake]
+        if len(valid_positions) == 0:
+            raise Exception("vitória!")
+        return valid_positions[random.randint(0, len(valid_positions)-1)]
 
-    startY, startX = arena_height//2+1, arena_width//2
-    snake = [[startY, startX], [startY-1, startX], [startY-2, startX],
-             [startY-3, startX]]
-    # next_body_part = 0.0 # 1.0 == body part novo
     rat = random_rat()
 
     while True:
@@ -67,9 +73,14 @@ def main(stdsrc):
         win.addstr(0, 2, ' wasd ou hjkl para controlar. ctrl+c para sair.')
         pontos = f' pontos: {len(snake)-4} '
         win.addstr(0, screen_width - len(pontos) - 1, pontos)
-        win.addstr(1, 2, str(snake))
+        # win.addstr(1, 2, str(snake))
 
         c = win.getch()
+
+        if c != -1:
+            start = True
+        if not start:
+            continue
 
         head = snake[HEAD].copy()
 
@@ -99,7 +110,7 @@ def main(stdsrc):
         self_collision = any(head == body_part for body_part in snake[2:])
 
         if not inside_arena or self_collision:
-            raise Exception("game over ┐(´ー｀)┌")
+            raise Exception("game over ┐(´ー｀)┌. Pontos: " + str(len(snake)-4))
 
         if not_backwards:
             snake = move(head, snake)
